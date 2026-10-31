@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#7cc8f8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="쉐입프루츠">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<title>쉐입 프루츠</title>
+<style>
+/* 색은 모두 테마 변수. 기본값은 '과일 농장' 테마이고, 다른 테마는 JS 가 덮어쓴다. */
+:root{--ink:#5a3d22;--c1:#fffdf7;--c2:#fbeed6;--csh:#d6a46a;--frame:#e8b06a;--frame-d:#b0713a;--cream:#fffaf0;
+  --a1:#7ad66a;--a2:#4fb03f;--ash:#3a8a2e;--sub:#9a7550;--h1:#ffe3a6;--h2:#ffd88a;--hline:#f0c070;--label:#b47a3c;
+  --num:#ff7a45;--numsh:#ffe1b0;--page:#c4ebff;--toast:rgba(90,61,34,.92);--pink:#ff8fb1;
+  --gap:48px; /* 하단 로고·툴바에 가리지 않도록 버튼을 띄우는 여백 */
+  --font:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;font-family:var(--font);color:var(--ink);background:var(--page);
+  -webkit-text-size-adjust:100%;text-size-adjust:100%}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;transition:opacity .35s}
+#bg.fade{opacity:0}
+#bg svg{width:100%;height:100%;display:block}
+#bg .drift{animation:drift 26s ease-in-out infinite alternate}
+#bg .tw{animation:twinkle 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+#bg .d1{animation-delay:.9s}#bg .d2{animation-delay:1.7s}#bg .d3{animation-delay:.4s}
+#bg .wave{animation:wave 4s ease-in-out infinite alternate}
+#bg .petal{animation:fall 9s linear infinite;transform-box:fill-box}
+@keyframes drift{to{transform:translateX(26px)}}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes wave{to{transform:translateX(-18px)}}
+@keyframes fall{from{transform:translate(0,-80px) rotate(0)}to{transform:translate(-90px,900px) rotate(540deg)}}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:520px;margin:0 auto;
+  padding-top:calc(env(safe-area-inset-top) + 6px)}
+header{display:flex;align-items:center;gap:8px;padding:6px 12px 8px}
+button{font-family:inherit;color:var(--ink);cursor:pointer;touch-action:manipulation}
+.iconbtn{width:46px;height:46px;flex:none;border-radius:16px;border:3px solid #fff;background:linear-gradient(var(--c1),var(--c2));
+  box-shadow:0 4px 0 var(--csh),0 8px 14px rgba(0,0,0,.14);font-size:22px;padding:0}
+.iconbtn:active,.tool:active{transform:translateY(3px);box-shadow:0 1px 0 var(--csh)}
+.score{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:54px;
+  background:linear-gradient(var(--c1),var(--c2));border:4px solid var(--frame);border-radius:20px;
+  box-shadow:0 4px 0 var(--frame-d),0 8px 16px rgba(0,0,0,.16);overflow:hidden}
+.score small{font-size:11px;line-height:1.2;color:var(--label);letter-spacing:.3px;white-space:nowrap;max-width:100%;padding:0 6px;
+  overflow:hidden;text-overflow:ellipsis}
+.score b{font-size:26px;line-height:1.05;font-weight:400;color:var(--num);text-shadow:0 2px 0 var(--numsh);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.nextbox{flex:none;width:54px;height:54px;border-radius:18px;background:linear-gradient(#fffdf7,#fff0f5);border:3px solid #ffd0df;
+  box-shadow:0 4px 0 #eaa0b9,0 8px 14px rgba(200,90,130,.18);position:relative;display:flex;align-items:center;justify-content:center}
+.nextbox span{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;background:var(--pink);color:#fff;
+  border-radius:8px;padding:1px 6px;letter-spacing:.5px;box-shadow:0 2px 0 #e0668f}
+.nextbox canvas{width:46px;height:46px;display:block}
+.coin{flex:none;display:flex;align-items:center;gap:5px;background:linear-gradient(var(--a1),var(--a2));color:#fff;border-radius:999px;
+  padding:4px 12px 4px 4px;box-shadow:0 4px 0 var(--ash),0 8px 14px rgba(0,0,0,.18);min-width:80px;font-size:17px;border:2px solid #fff;
+  text-shadow:0 1px 0 rgba(0,0,0,.15);white-space:nowrap;font-variant-numeric:tabular-nums}
+.coin i{width:26px;height:26px;flex:none;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#f5a700);border:2px solid #fff;display:block;
+  box-shadow:inset 0 -2px 0 #d48a00}
+.coin.bump{animation:bump .45s}
+@keyframes bump{40%{transform:scale(1.2)}}
+#stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+#game{touch-action:none;display:block;filter:drop-shadow(0 12px 16px rgba(0,0,0,.2))}
+footer{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:8px 14px calc(env(safe-area-inset-bottom) + var(--gap))}
+.grp{display:flex;gap:10px}
+.tool{width:72px;height:64px;border-radius:22px;border:3px solid #fff;background:linear-gradient(var(--c1),var(--c2));
+  box-shadow:0 5px 0 var(--csh),0 10px 16px rgba(0,0,0,.18);display:flex;flex-direction:column;padding:0;
+  align-items:center;justify-content:center;font-size:12px;gap:2px;white-space:nowrap}
+.tool .ic{font-size:25px;line-height:1}
+.tool .cost{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--ash)}
+.tool .cost i{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#f5a700);display:block}
+.tool.pink{background:linear-gradient(#fff6f9,#ffdbe7);box-shadow:0 5px 0 #eaa0b9,0 10px 16px rgba(200,90,130,.2);color:#c2456f}
+.tool.active{background:linear-gradient(#fff6c8,#ffe27a);box-shadow:0 5px 0 #d6a800}
+.tool.spin .ic{animation:spin .5s}
+@keyframes spin{to{transform:rotate(360deg) scale(1.1)}}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + var(--gap) + 90px);transform:translateX(-50%);
+  background:var(--toast);color:#fff;padding:10px 18px;border-radius:16px;font-size:15px;opacity:0;transition:opacity .25s;
+  pointer-events:none;white-space:nowrap;z-index:30}
+#toast.show{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(40,30,30,.42);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+  display:none;align-items:center;justify-content:center;z-index:20;
+  padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px)}
+.modal.show{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.card{background:var(--cream);border-radius:28px;border:5px solid var(--frame);width:100%;max-width:420px;max-height:100%;
+  display:flex;flex-direction:column;overflow:hidden;text-align:center;box-shadow:0 8px 0 var(--frame-d),0 20px 40px rgba(0,0,0,.25);
+  animation:pop .25s cubic-bezier(.2,1.4,.5,1)}
+@keyframes pop{from{transform:scale(.85)}}
+.card-head{position:relative;flex:none;padding:16px 56px 12px;
+  background:repeating-linear-gradient(90deg,var(--h1) 0 18px,var(--h2) 18px 36px);border-bottom:3px dashed var(--hline)}
+.card-head h2{margin:0;font-size:24px;font-weight:400;text-shadow:0 2px 0 #fff}
+.close{position:absolute;right:10px;top:9px;width:42px;height:42px;border-radius:50%;border:3px solid #fff;padding:0;
+  background:linear-gradient(#ffa3c0,#ff7fa6);color:#fff;font-size:20px;line-height:1;box-shadow:0 3px 0 #d9608a}
+.close:active{transform:translateY(2px);box-shadow:0 1px 0 #d9608a}
+.card-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:8px 14px 18px}
+.card p{margin:6px 0}
+.sub{font-size:14px;color:var(--sub)}
+.big{font-size:52px;color:var(--num);text-shadow:0 3px 0 var(--numsh)}
+.btn{border:3px solid #fff;border-radius:18px;background:linear-gradient(var(--a1),var(--a2));color:#fff;font-size:19px;
+  padding:12px 30px;box-shadow:0 5px 0 var(--ash);margin-top:14px;text-shadow:0 1px 0 rgba(0,0,0,.15)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ash)}
+.btn.gray{background:linear-gradient(var(--c1),var(--c2));color:var(--ink);box-shadow:0 5px 0 var(--csh);text-shadow:none}
+.dex{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:left;margin-top:8px}
+.dex .it{display:flex;gap:8px;align-items:center;background:#fff;border-radius:16px;padding:6px 8px;min-width:0;
+  box-shadow:0 3px 0 rgba(0,0,0,.08);border:2px solid rgba(255,255,255,.8)}
+.dex canvas{width:54px;height:54px;flex:none}
+.dex b{font-size:16px;font-weight:400;display:block}
+.dex small{font-size:11.5px;color:var(--sub);line-height:1.3;display:block;font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+.dex .no{font-size:11px;color:#e09a00}
+.stat{display:flex;justify-content:center;gap:10px;margin-top:6px}
+.stat div{background:#fff;border-radius:14px;padding:6px 14px;box-shadow:0 3px 0 rgba(0,0,0,.08);font-size:14px}
+.stat b{display:block;font-size:20px;font-weight:400;color:var(--a2)}
+#err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;background:var(--page);z-index:40}
+
+/* 작은 화면(아이폰 SE·미니 등): 위아래를 줄여 게임 통을 크게 */
+@media (max-width:380px){
+  header{gap:6px;padding:6px 8px 8px}
+  .iconbtn{width:42px;height:42px;font-size:20px;border-radius:14px}
+  .nextbox{width:48px;height:48px;border-radius:16px}
+  .nextbox canvas{width:40px;height:40px}
+  .score{height:50px;border-width:3px;border-radius:18px}
+  .score b{font-size:23px}
+  .score small{font-size:10px}
+  .coin{min-width:0;font-size:15px;padding:3px 9px 3px 3px;gap:4px}
+  .coin i{width:22px;height:22px}
+  footer{padding-left:10px;padding-right:10px}
+  .grp{gap:8px}
+  .tool{width:64px}
+  .dex{grid-template-columns:1fr}
+}
+@media (max-height:740px){
+  :root{--gap:28px}
+  #app{padding-top:calc(env(safe-area-inset-top) + 2px)}
+  header{padding-top:4px;padding-bottom:6px}
+  footer{padding-top:4px}
+  .tool{height:54px;border-radius:18px;font-size:11px;gap:1px}
+  .tool .ic{font-size:21px}
+  .tool .cost{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="bg" aria-hidden="true"></div>
+<div id="app">
+  <header>
+    <button class="iconbtn" id="btnRestart" aria-label="다시 시작">↻</button>
+    <div class="score"><small>BEST <span id="best">0</span></small><b id="score">0</b></div>
+    <div class="nextbox"><span>NEXT</span><canvas id="next" width="96" height="96"></canvas></div>
+    <div class="coin" id="coinPill"><i></i><span id="coins">0</span></div>
+  </header>
+  <div id="stage"><canvas id="game"></canvas></div>
+  <footer>
+    <div class="grp">
+      <button class="tool pink" id="btnDex"><span class="ic">📖</span>과일도감</button>
+      <button class="tool" id="btnTheme"><span class="ic">🎨</span>테마</button>
+    </div>
+    <div class="grp">
+      <button class="tool" id="btnBomb"><span class="ic">💣</span><span class="cost"><i></i>20</span></button>
+      <button class="tool" id="btnShake"><span class="ic">🌀</span><span class="cost"><i></i>20</span></button>
+    </div>
+  </footer>
+</div>
+
+<div class="modal" id="overModal"><div class="card">
+  <div class="card-head"><h2>게임 오버!</h2></div>
+  <div class="card-body">
+    <p class="sub">이번 점수</p><div class="big" id="ovScore">0</div>
+    <div class="stat"><div>최고 점수<b id="ovBest">0</b></div><div>획득 코인<b id="ovCoins">0</b></div></div>
+    <button class="btn" id="btnAgain">다시 하기</button>
+  </div>
+</div></div>
+
+<div class="modal" id="dexModal"><div class="card">
+  <div class="card-head"><h2>📖 과일도감</h2><button class="close" id="btnDexX" aria-label="닫기">✕</button></div>
+  <div class="card-body scroll">
+    <p class="sub">같은 과일 두 개가 닿으면 다음 과일로!<br>모양마다 구르는 방식이 달라요.</p>
+    <div class="dex" id="dexList"></div>
+    <button class="btn gray" id="btnDexClose">닫기</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+<div id="err">물리 엔진을 불러오지 못했어요.<br>새로고침 해 주세요.</div>
+
+<script src="matter.min.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+<script>
+(() => {
+if (!window.Matter) { document.getElementById('err').style.display = 'flex'; return; }
+const { Engine, Bodies, Body, Composite, Events, Vertices, Query } = Matter;
+
+// ---------- 월드 상수 ----------
+// 통 높이는 처음 켤 때 화면 비율에 맞춘다(작은 폰은 낮게, 긴 폰은 높게). 폭은 항상 400.
+const W = 400, stageEl = document.getElementById('stage');
+const H = Math.round(Math.max(540, Math.min(720, W * stageEl.clientHeight / Math.max(1, stageEl.clientWidth))));
+const WALL = 14, FLOOR = H - 16, DROP_Y = 70, DANGER_Y = 128;
+const STEP = 1000 / 60, DROP_COOLDOWN = 550, OVER_TIME = 2200;
+const ITEM_COST = 20, COIN_MAKE_MAX = 10, COIN_POP_MAX = 30;
+
+// 과일 정의: 모양(shape)이 물리 거동을 결정한다
+const FRUITS = [
+  { name: '블루베리', r: 15, shape: 'circle',  c: '#6C7BEA', d: '#3B47A0', desc: '동그라미 · 데굴데굴 잘 굴러가요', fs: .62 },
+  { name: '딸기',     r: 21, shape: 'tri',     c: '#FF5A6E', d: '#B82838', desc: '역삼각형 · 뾰족한 끝이 틈새에 콕 끼어요', pat: 'seeds', leaf: 'crown', fs: .5 },
+  { name: '포도',     r: 27, shape: 'hex',     c: '#A56BEA', d: '#6A35B0', desc: '육각형 · 살짝 구르다 딱 멈춰요', pat: 'grape', leaf: 'stem', fs: .56 },
+  { name: '귤',       r: 34, shape: 'circle',  c: '#FFA62B', d: '#D27300', desc: '동그라미 · 멀리까지 굴러가요', pat: 'pores', leaf: 'leaf', fs: .6 },
+  { name: '레몬',     r: 41, shape: 'ellipse', c: '#FFE34F', d: '#C9A200', desc: '타원 · 옆으로 눕고 뒤뚱거려요', pat: 'pores', leaf: 'leaf', fs: .55 },
+  { name: '풋사과',   r: 48, shape: 'rsquare', c: '#97DC5A', d: '#4E9A1E', desc: '네모 · 구르지 않고 차곡차곡 쌓여요', leaf: 'stem', fs: .56 },
+  { name: '바나나',   r: 56, shape: 'capsule', c: '#FFD93D', d: '#C29A00', desc: '길쭉이 · 기울면 미끄러져 내려가요', pat: 'banana', fs: .4 },
+  { name: '배',       r: 64, shape: 'drop',    c: '#EEDB8E', d: '#B0963A', desc: '물방울 · 아래가 무거워 오뚝이처럼 서요', pat: 'pores', leaf: 'stem', fs: .5 },
+  { name: '파인애플', r: 73, shape: 'tallOct', c: '#F7B73B', d: '#B97E12', desc: '길쭉 팔각 · 세워지면 기우뚱 쓰러져요', pat: 'grid', leaf: 'crown', fs: .5 },
+  { name: '멜론',     r: 84, shape: 'deca',    c: '#B8E47E', d: '#6FA83A', desc: '십각형 · 묵직하게 천천히 굴러요', pat: 'net', leaf: 'stem', fs: .5 },
+  { name: '수박',     r: 98, shape: 'circle',  c: '#3FBF55', d: '#1E7A30', desc: `최종 과일 · 만들면 코인 +${COIN_MAKE_MAX}, 두 개를 합치면 +${COIN_POP_MAX}!`, pat: 'stripes', fs: .5 },
+];
+const MAX = FRUITS.length - 1;
+const SCORE = FRUITS.map((_, i) => (i + 1) * (i + 2) / 2);
+const DROP_WEIGHTS = [30, 26, 20, 14, 10];
+
+// 무늬용 고정 난수
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+FRUITS.forEach(F => { F.dots = Array.from({ length: 14 }, () => [rnd() * 2 - 1, rnd() * 2 - 1]); });
+
+// ---------- 저장 ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('sf_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('sf_' + k, JSON.stringify(v)); } catch {} },
+};
+let coins = store.get('coins', 100), best = store.get('best', 0), seen = store.get('seen', 4);
+
+// ---------- 테마 ----------
+// css: 화면 색(CSS 변수), box: 캔버스 통 모양, bg: 배경 그림(SVG)
+const SVG_HEAD = '<svg viewBox="0 0 400 860" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">';
+const CLOUD = '<g id="cl"><circle cx="0" cy="0" r="16"/><circle cx="18" cy="-10" r="21"/><circle cx="40" cy="-2" r="17"/><circle cx="58" cy="4" r="12"/><rect x="0" y="0" width="58" height="16" rx="8"/></g>';
+const SPARK = '<path id="sp" d="M0-6C1-1 1-1 6 0C1 1 1 1 0 6C-1 1-1 1-6 0C-1-1-1-1 0-6Z"/>';
+const grad = (id, stops, v = true) => `<linearGradient id="${id}" x1="0" y1="0" x2="${v ? 0 : 1}" y2="${v ? 1 : 0}">${stops.map((c, i) => `<stop offset="${i / (stops.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+const glow = (id, c) => `<radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity=".95"/><stop offset=".35" stop-color="${c}" stop-opacity=".4"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+
+const THEMES = [
+  {
+    id: 'farm', name: '과일 농장', meta: '#7cc8f8',
+    css: {},
+    box: {
+      wood: ['#F7D29C', '#EBB46E', '#D3954F'], line: '#A86B32', grain: 'rgba(150,90,40,.28)',
+      knob: ['#6CC25A', '#3F8F33'], leaf: '#8FDC6E',
+      glass: ['rgba(240,250,255,.72)', 'rgba(215,240,255,.86)', 'rgba(255,240,215,.92)'], shine: .5,
+    },
+    bg: () => `${SVG_HEAD}<defs>${grad('sky', ['#7cc8f8', '#c4ebff', '#fff0d2', '#ffe2c2'])}${glow('gl', '#fff2a8')}
+      ${grad('h1', ['#c9ecb4', '#a8dc93'])}${grad('h2', ['#9fdc84', '#7fca68'])}${grad('h3', ['#82cf63', '#5fb84a'])}${CLOUD}${SPARK}
+      <g id="tr"><rect x="-3" y="0" width="6" height="18" rx="3" fill="#a8743f"/><circle r="17" fill="#6cc25a"/><circle cx="-9" cy="-6" r="10" fill="#7fd06a"/>
+      <circle cx="6" cy="-4" r="3.2" fill="#ff6b6b"/><circle cx="-6" cy="5" r="3.2" fill="#ffb03b"/><circle cx="9" cy="7" r="3.2" fill="#ff6b6b"/></g></defs>
+      <rect width="400" height="860" fill="url(#sky)"/><circle cx="326" cy="128" r="120" fill="url(#gl)"/><circle cx="326" cy="128" r="34" fill="#fff6c4"/>
+      <g class="drift" fill="#fff" opacity=".9"><use href="#cl" x="34" y="92"/><use href="#cl" x="200" y="230" opacity=".85"/><use href="#cl" x="120" y="330" opacity=".7"/></g>
+      <g fill="#fff"><use href="#sp" x="70" y="170" class="tw"/><use href="#sp" x="260" y="70" class="tw d1"/><use href="#sp" x="360" y="300" class="tw d2"/><use href="#sp" x="40" y="420" class="tw d1"/></g>
+      <path d="M0 640C70 590 150 600 210 625S340 590 400 610V860H0Z" fill="url(#h1)"/>
+      <use href="#tr" x="52" y="610"/><use href="#tr" x="168" y="604"/><use href="#tr" x="352" y="596"/>
+      <path d="M0 720C90 670 180 690 250 712S360 680 400 690V860H0Z" fill="url(#h2)"/><use href="#tr" x="300" y="690"/><use href="#tr" x="96" y="684"/>
+      <path d="M0 780C80 750 170 760 230 776S350 748 400 760V860H0Z" fill="url(#h3)"/>
+      <g fill="#fff" opacity=".9"><circle cx="40" cy="800" r="3"/><circle cx="130" cy="820" r="2.5"/><circle cx="260" cy="806" r="3"/><circle cx="350" cy="830" r="2.5"/></g>
+      <g fill="#ff9fbe"><circle cx="70" cy="830" r="3"/><circle cx="200" cy="840" r="2.5"/><circle cx="320" cy="796" r="3"/></g></svg>`,
+  },
+  {
+    id: 'night', name: '별빛 밤하늘', meta: '#141a4a',
+    css: { ink: '#3b3566', c1: '#fbfaff', c2: '#e6e2ff', csh: '#9c93e0', frame: '#a99ff0', 'frame-d': '#5b50b5', cream: '#f8f7ff',
+      a1: '#a596ff', a2: '#6f5ef0', ash: '#4b3dc0', sub: '#7a74a8', h1: '#e7e3ff', h2: '#dcd6ff', hline: '#b9b0f0', label: '#6f5ef0',
+      num: '#ff8fb1', numsh: '#ffe0ea', page: '#141a4a', toast: 'rgba(30,25,80,.92)' },
+    box: {
+      wood: ['#b7aef5', '#8a7fe2', '#6156c6'], line: '#3f3596', grain: 'rgba(255,255,255,.14)',
+      knob: ['#FFD95A', '#C99500'], star: true,
+      glass: ['rgba(60,66,140,.5)', 'rgba(40,46,110,.6)', 'rgba(70,52,120,.7)'], shine: .14,
+    },
+    bg: () => {
+      let stars = '';
+      const pts = [[30, 60], [90, 130], [150, 40], [210, 110], [270, 30], [380, 70], [60, 240], [130, 300], [240, 260], [350, 220], [20, 380], [180, 420], [300, 360], [370, 450], [90, 480], [250, 500]];
+      pts.forEach(([x, y], i) => { stars += i % 3 === 0 ? `<use href="#sp" x="${x}" y="${y}" class="tw d${i % 4}"/>` : `<circle cx="${x}" cy="${y}" r="${1.2 + (i % 3) * .6}" class="tw d${i % 4}"/>`; });
+      return `${SVG_HEAD}<defs>${grad('sky', ['#0f1440', '#232a72', '#4b3f93', '#7a5aa8'])}${glow('gl', '#fff3c4')}
+        ${grad('h1', ['#2f3683', '#262c70'])}${grad('h2', ['#232968', '#1b2058'])}${grad('h3', ['#1a1f52', '#121640'])}${SPARK}${CLOUD}</defs>
+        <rect width="400" height="860" fill="url(#sky)"/><g fill="#fff">${stars}</g>
+        <circle cx="318" cy="140" r="110" fill="url(#gl)" opacity=".7"/><circle cx="318" cy="140" r="34" fill="#fff4cf"/>
+        <circle cx="306" cy="130" r="6" fill="#f0e2b0"/><circle cx="328" cy="152" r="4" fill="#f0e2b0"/><circle cx="324" cy="124" r="3" fill="#f0e2b0"/>
+        <g class="drift" fill="#8a86c9" opacity=".35"><use href="#cl" x="40" y="200"/><use href="#cl" x="230" y="330"/></g>
+        <path d="M0 650C80 600 160 610 220 632S340 600 400 616V860H0Z" fill="url(#h1)"/>
+        <path d="M0 720C90 676 180 694 250 714S360 684 400 692V860H0Z" fill="url(#h2)"/>
+        <g fill="#2d2a5c"><rect x="60" y="676" width="34" height="30" rx="3"/><path d="M54 678L77 658L100 678Z"/><rect x="300" y="664" width="30" height="34" rx="3"/><path d="M294 666L315 648L336 666Z"/></g>
+        <g fill="#ffd95a"><rect x="68" y="684" width="7" height="8" rx="1"/><rect x="80" y="684" width="7" height="8" rx="1" class="tw d2"/><rect x="309" y="674" width="7" height="8" rx="1" class="tw d1"/></g>
+        <path d="M0 780C80 752 170 762 230 778S350 750 400 762V860H0Z" fill="url(#h3)"/>
+        <g fill="#fff59a"><circle cx="50" cy="760" r="2.5" class="tw"/><circle cx="150" cy="800" r="2" class="tw d1"/><circle cx="260" cy="770" r="2.5" class="tw d2"/><circle cx="350" cy="810" r="2" class="tw d3"/><circle cx="210" cy="830" r="2" class="tw d1"/></g></svg>`;
+    },
+  },
+  {
+    id: 'beach', name: '여름 바닷가', meta: '#5cc9f2',
+    css: { ink: '#1f4d63', c1: '#ffffff', c2: '#e3f6fb', csh: '#8fcbdc', frame: '#86d3e6', 'frame-d': '#3c98b5', cream: '#f6fdff',
+      a1: '#ffa88a', a2: '#ff7653', ash: '#d4583a', sub: '#5a8798', h1: '#c9f0f8', h2: '#b3e8f4', hline: '#7fd0e4', label: '#3c98b5',
+      num: '#ff7653', numsh: '#ffe0d4', page: '#8fdcf5', toast: 'rgba(20,70,95,.92)' },
+    box: {
+      wood: ['#f6e8cc', '#e6cfa6', '#cdb07e'], line: '#9f8256', grain: 'rgba(120,90,50,.25)',
+      knob: ['#ff9d7a', '#d4583a'], shell: true,
+      glass: ['rgba(235,252,255,.72)', 'rgba(200,240,250,.85)', 'rgba(252,240,214,.92)'], shine: .5,
+    },
+    bg: () => `${SVG_HEAD}<defs>${grad('sky', ['#4fc3f2', '#9fe2fb', '#e4f8ff'])}${glow('gl', '#fff6a8')}
+      ${grad('sea', ['#2fb6dc', '#1d93c4'])}${grad('sea2', ['#56cfe9', '#33b5dc'])}${grad('sand', ['#fde9bf', '#f3d08f'])}${CLOUD}${SPARK}</defs>
+      <rect width="400" height="860" fill="url(#sky)"/><circle cx="82" cy="120" r="120" fill="url(#gl)"/><circle cx="82" cy="120" r="36" fill="#fff6b0"/>
+      <g class="drift" fill="#fff" opacity=".95"><use href="#cl" x="230" y="90"/><use href="#cl" x="60" y="260" opacity=".8"/><use href="#cl" x="280" y="340" opacity=".7"/></g>
+      <g fill="none" stroke="#3a6f86" stroke-width="2.4" stroke-linecap="round"><path d="M250 190q8-8 16 0q8-8 16 0"/><path d="M300 230q6-6 12 0q6-6 12 0"/></g>
+      <rect y="600" width="400" height="260" fill="url(#sea)"/>
+      <g class="wave"><path d="M-40 640q20-12 40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0V720H-40Z" fill="url(#sea2)"/>
+      <path d="M-40 640q20-12 40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/></g>
+      <g fill="#fff" opacity=".9"><use href="#sp" x="120" y="620" class="tw"/><use href="#sp" x="300" y="660" class="tw d2"/></g>
+      <path d="M0 740C90 712 200 726 260 736S360 716 400 722V860H0Z" fill="url(#sand)"/>
+      <path d="M340 760C334 700 318 650 296 610" stroke="#a8743f" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <g fill="#4fbf5a"><path d="M296 610q-40-10-64 20q34-6 64-20Z"/><path d="M296 610q-20-36-58-38q22 22 58 38Z"/><path d="M296 610q20-34 60-30q-28 18-60 30Z"/><path d="M296 610q40-2 58 30q-30-14-58-30Z"/></g>
+      <circle cx="292" cy="616" r="6" fill="#8a5a2b"/><circle cx="302" cy="618" r="6" fill="#8a5a2b"/>
+      <g fill="#ff8a65"><path d="M60 790l5 10 11 1-8 7 3 11-11-6-10 6 3-11-8-7 11-1Z"/></g>
+      <g fill="#fff3e6" stroke="#f0b8a0" stroke-width="1.5"><path d="M180 812a10 10 0 0 1 20 0Z"/><path d="M110 830a8 8 0 0 1 16 0Z"/></g></svg>`,
+  },
+  {
+    id: 'candy', name: '달콤 디저트', meta: '#ffc3dc',
+    css: { ink: '#6a2f4f', c1: '#fffafd', c2: '#ffe6f1', csh: '#f0a3c4', frame: '#ff9fc6', 'frame-d': '#d9609a', cream: '#fff8fb',
+      a1: '#7fe0cb', a2: '#3fbfa6', ash: '#2c9480', sub: '#a06684', h1: '#ffe1ee', h2: '#ffd2e6', hline: '#ffa8cb', label: '#d9609a',
+      num: '#ff6fa8', numsh: '#ffe0ee', page: '#ffd9ea', toast: 'rgba(110,40,80,.92)' },
+    box: {
+      wood: ['#fff2f8', '#ffd3e6', '#ffb3d2'], line: '#d9609a', grain: null, stripe: '#ff7fb3',
+      knob: ['#7fe0cb', '#2c9480'], candy: true,
+      glass: ['rgba(255,250,253,.78)', 'rgba(255,236,245,.88)', 'rgba(255,246,232,.93)'], shine: .5,
+    },
+    bg: () => {
+      const flags = ['#ff7fb3', '#ffd34d', '#7fe0cb', '#a58cff', '#ff9f68'];
+      let bunting = '', sprinkles = '';
+      for (let i = 0; i < 9; i++) bunting += `<path d="M${i * 46 + 6} ${118 + Math.sin(i) * 4}l18 30l18-30Z" fill="${flags[i % 5]}"/>`;
+      const sp = [[40, 300, 20], [120, 380, -30], [330, 280, 50], [260, 420, 10], [70, 500, -60], [350, 520, 30], [190, 250, 80]];
+      sp.forEach(([x, y, r], i) => { sprinkles += `<rect x="${x}" y="${y}" width="14" height="5" rx="2.5" fill="${flags[i % 5]}" transform="rotate(${r} ${x + 7} ${y + 2})"/>`; });
+      return `${SVG_HEAD}<defs>${grad('wall', ['#ffe4f0', '#ffd1e5', '#ffc3dc'])}
+        <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="7" cy="7" r="3" fill="#fff" opacity=".7"/><circle cx="21" cy="21" r="3" fill="#fff" opacity=".7"/></pattern>
+        <pattern id="stripe" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="20" height="40" fill="#ff9fc6"/><rect x="20" width="20" height="40" fill="#fff5fa"/></pattern>
+        ${grad('choco', ['#9a5b3e', '#7a4430'])}</defs>
+        <rect width="400" height="860" fill="url(#wall)"/><rect width="400" height="860" fill="url(#dots)"/>
+        <path d="M0 0H400V70q-20 26-40 0t-40 6q-20 38-40 2t-40-4q-20 30-40 0t-40 6q-20 22-40-4t-40 8q-20 30-40-6Z" fill="#fff" opacity=".95"/>
+        <path d="M0 116q200 40 400 0" stroke="#d9609a" stroke-width="2" fill="none"/>${bunting}
+        <g>${sprinkles}</g>
+        <rect y="640" width="400" height="220" fill="url(#stripe)"/>
+        <path d="M0 640H400V660q-20 18-40 0t-40 4q-20 24-40 0t-40-2q-20 20-40 0t-40 4q-20 16-40-2t-40 6q-20 22-40-6Z" fill="#fff"/>
+        <rect y="760" width="400" height="100" fill="url(#choco)"/>
+        <g transform="translate(70 728)"><path d="M-22 10h44l-6 30h-32Z" fill="#7fe0cb"/><path d="M-20 10h40" stroke="#3fbfa6" stroke-width="3"/>
+        <circle cy="0" r="22" fill="#fff0f6"/><circle cx="-10" cy="4" r="12" fill="#fff0f6"/><circle cx="10" cy="4" r="12" fill="#fff0f6"/><circle cy="-20" r="7" fill="#ff4d6d"/></g>
+        <g transform="translate(320 742)"><circle r="28" fill="#f5c27a"/><circle r="23" fill="#ff8fc0"/><circle r="9" fill="#7a4430"/>
+        <g fill="#fff"><rect x="-16" y="-14" width="8" height="3" rx="1.5"/><rect x="6" y="-20" width="8" height="3" rx="1.5" fill="#ffd34d"/><rect x="12" y="-4" width="8" height="3" rx="1.5" fill="#7fe0cb"/></g></g>
+        <g transform="translate(200 770)"><rect x="-2" y="-10" width="4" height="60" fill="#fff"/><circle cy="-22" r="18" fill="#ff7fb3"/><path d="M0-22m-12 0a12 12 0 1 1 12 12" stroke="#fff" stroke-width="4" fill="none"/></g></svg>`;
+    },
+  },
+  {
+    id: 'sakura', name: '벚꽃 공원', meta: '#ffd9e2',
+    css: { ink: '#5c3a3a', c1: '#fffdfd', c2: '#fdeef0', csh: '#e2a7ae', frame: '#d49a7b', 'frame-d': '#8c5338', cream: '#fffafa',
+      a1: '#ffa7bc', a2: '#f27394', ash: '#c94e70', sub: '#9c7070', h1: '#ffe6ea', h2: '#ffd9df', hline: '#f0b3bd', label: '#c45a74',
+      num: '#f27394', numsh: '#ffe3e9', page: '#ffe5ec', toast: 'rgba(92,58,58,.92)' },
+    box: {
+      wood: ['#e7b293', '#c98a6b', '#a86c4f'], line: '#7a4630', grain: 'rgba(90,40,20,.25)',
+      knob: ['#ffb7c8', '#e07a96'], leaf: '#ffd6e0', flower: true,
+      glass: ['rgba(255,250,252,.72)', 'rgba(255,238,243,.86)', 'rgba(255,244,236,.92)'], shine: .5,
+    },
+    bg: () => {
+      let petals = '';
+      const ps = [[60, 0, 0], [150, 0, 2], [240, 0, 4.5], [330, 0, 1.2], [110, 0, 6], [290, 0, 3.3], [200, 0, 7.5], [20, 0, 5.2]];
+      ps.forEach(([x, , d]) => { petals += `<ellipse cx="${x}" cy="0" rx="6" ry="4" fill="#ffb3c6" class="petal" style="animation-delay:-${d}s"/>`; });
+      const tree = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-5 60Q-2 20 0 0Q4 20 6 60Z" fill="#8c5a44"/><path d="M0 20Q-14 6-22 -2" stroke="#8c5a44" stroke-width="4" fill="none"/>
+        <circle cx="-22" cy="-6" r="22" fill="#ffc1d0"/><circle cx="4" cy="-20" r="26" fill="#ffb3c6"/><circle cx="26" cy="-4" r="20" fill="#ffc9d6"/><circle cx="0" cy="2" r="18" fill="#ffd3de"/>
+        <circle cx="-10" cy="-26" r="4" fill="#fff"/><circle cx="18" cy="-12" r="3" fill="#fff"/></g>`;
+      return `${SVG_HEAD}<defs>${grad('sky', ['#ffd6e0', '#ffe9ef', '#fff5ef'])}${grad('g1', ['#e6f2cf', '#d2e9b8'])}${grad('g2', ['#c9e6a8', '#b0d98d'])}${CLOUD}</defs>
+        <rect width="400" height="860" fill="url(#sky)"/>
+        <g class="drift" fill="#fff" opacity=".85"><use href="#cl" x="40" y="120"/><use href="#cl" x="250" y="240"/></g>
+        <path d="M0 660C80 620 170 630 230 650S350 620 400 636V860H0Z" fill="url(#g1)"/>
+        ${tree(60, 626, 1)}${tree(340, 610, .9)}${tree(200, 640, .7)}
+        <path d="M0 750C90 716 190 730 250 746S360 720 400 728V860H0Z" fill="url(#g2)"/>
+        <path d="M150 860C170 800 230 790 260 860Z" fill="#e8d3b8" opacity=".8"/>
+        <g fill="#ffb3c6"><circle cx="40" cy="800" r="3"/><circle cx="120" cy="830" r="2.5"/><circle cx="300" cy="790" r="3"/><circle cx="360" cy="836" r="2.5"/></g>
+        <g>${petals}</g></svg>`;
+    },
+  },
+];
+let theme = THEMES.find(t => t.id === store.get('theme', 'farm')) || THEMES[0];
+
+function applyTheme(t, animate) {
+  theme = t; store.set('theme', t.id);
+  const root = document.documentElement.style, base = THEMES[0].css;
+  const keys = new Set([...Object.keys(base), ...THEMES.flatMap(x => Object.keys(x.css))]);
+  for (const k of keys) { const v = t.css[k]; v ? root.setProperty('--' + k, v) : root.removeProperty('--' + k); }
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t.meta);
+  const bg = document.getElementById('bg');
+  const paint = () => { bg.innerHTML = t.bg(); bg.classList.remove('fade'); };
+  if (animate) { bg.classList.add('fade'); setTimeout(paint, 300); } else paint();
+}
+applyTheme(theme, false);
+
+// ---------- 물리 ----------
+const engine = Engine.create({ positionIterations: 10, velocityIterations: 8 });
+engine.gravity.y = 1.1;
+const world = engine.world;
+const wallOpt = { isStatic: true, friction: 0.5, restitution: 0.1, label: 'wall' };
+Composite.add(world, [
+  Bodies.rectangle(WALL - 60, H / 2, 120, H * 3, wallOpt),
+  Bodies.rectangle(W - WALL + 60, H / 2, 120, H * 3, wallOpt),
+  Bodies.rectangle(W / 2, FLOOR + 60, W * 2, 120, wallOpt),
+]);
+
+const FRUIT_OPT = { friction: 0.45, frictionStatic: 0.7, restitution: 0.12, density: 0.0012, frictionAir: 0.006 };
+const ellipse = (rx, ry, n) => Array.from({ length: n }, (_, i) => {
+  const a = i / n * Math.PI * 2; return { x: Math.cos(a) * rx, y: Math.sin(a) * ry };
+});
+const chamfer = (v, rad) => Vertices.chamfer(v, rad, -1, 2, 14);
+
+function makeBody(lv, x, y) {
+  const F = FRUITS[lv], r = F.r, o = { ...FRUIT_OPT, label: 'fruit' };
+  let b;
+  switch (F.shape) {
+    case 'circle': b = Bodies.circle(x, y, r, o); break;
+    case 'tri': b = Bodies.fromVertices(x, y, [chamfer([{ x: -r * 1.05, y: -r * .62 }, { x: r * 1.05, y: -r * .62 }, { x: 0, y: r * 1.12 }], r * .32)], o); break;
+    case 'hex': b = Bodies.polygon(x, y, 6, r * 1.03, { ...o, chamfer: { radius: r * .16 } }); break;
+    case 'ellipse': b = Bodies.fromVertices(x, y, [ellipse(r * 1.22, r * .84, 28)], o); break;
+    case 'rsquare': b = Bodies.rectangle(x, y, r * 1.8, r * 1.7, { ...o, chamfer: { radius: r * .42 } }); break;
+    case 'capsule': b = Bodies.rectangle(x, y, r * 2.3, r * .92, { ...o, chamfer: { radius: r * .44 } }); break;
+    case 'drop': {
+      const big = Bodies.circle(x, y + r * .22, r * .86), small = Bodies.circle(x, y - r * .52, r * .56);
+      b = Body.create({ ...o, parts: [big, small] });
+      break;
+    }
+    case 'tallOct': {
+      const v = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2 + Math.PI / 8; return { x: Math.cos(a) * r * .86, y: Math.sin(a) * r * 1.12 }; });
+      b = Bodies.fromVertices(x, y, [chamfer(v, r * .12)], o);
+      break;
+    }
+    case 'deca': b = Bodies.polygon(x, y, 10, r, { ...o, chamfer: { radius: r * .1 } }); break;
+  }
+  b.isFruit = true; b.level = lv; b.born = performance.now();
+  // 기울기 0 기준 로컬 정보(잎 위치·얼굴 위치·폭)
+  let top = 0, hw = 0, bot = 0;
+  for (const p of partsOf(b)) for (const v of p.vertices) {
+    top = Math.min(top, v.y - b.position.y); bot = Math.max(bot, v.y - b.position.y); hw = Math.max(hw, Math.abs(v.x - b.position.x));
+  }
+  b.localTop = top; b.halfW = hw; b.halfH = Math.max(-top, bot);
+  b.faceOff = { x: 0, y: 0 };
+  if (F.shape === 'drop') b.faceOff.y = b.parts[1].position.y - b.position.y;
+  if (F.shape === 'tri') b.faceOff.y = -r * .2;
+  return b;
+}
+const partsOf = b => b.parts.length > 1 ? b.parts.slice(1) : [b];
+const TEMPL = FRUITS.map((_, i) => { const t = makeBody(i, 0, 0); t.born = -1e9; return t; });
+
+// ---------- 그리기 ----------
+function tracePath(ctx, b) {
+  ctx.beginPath();
+  for (const p of partsOf(b)) {
+    if (p.circleRadius) { ctx.moveTo(p.position.x + p.circleRadius, p.position.y); ctx.arc(p.position.x, p.position.y, p.circleRadius, 0, Math.PI * 2); continue; }
+    const v = p.vertices; ctx.moveTo(v[0].x, v[0].y);
+    for (let i = 1; i < v.length; i++) ctx.lineTo(v[i].x, v[i].y);
+    ctx.closePath();
+  }
+}
+
+function drawPattern(ctx, F, r) {
+  ctx.save();
+  switch (F.pat) {
+    case 'seeds':
+      ctx.fillStyle = '#FFE8A0';
+      for (const [dx, dy] of F.dots) { ctx.beginPath(); ctx.ellipse(dx * r * .85, dy * r * .7 + r * .05, r * .06, r * .09, 0, 0, 7); ctx.fill(); }
+      break;
+    case 'grape':
+      ctx.strokeStyle = 'rgba(70,20,120,.28)'; ctx.lineWidth = r * .06; ctx.fillStyle = 'rgba(255,255,255,.12)';
+      for (let gy = -1; gy <= 1; gy++) for (let gx = -1.5; gx <= 1.5; gx++) {
+        const cx = (gx + (gy % 2 ? .5 : 0)) * r * .62, cy = gy * r * .56;
+        ctx.beginPath(); ctx.arc(cx, cy, r * .32, 0, 7); ctx.fill(); ctx.stroke();
+      }
+      break;
+    case 'pores':
+      ctx.fillStyle = 'rgba(0,0,0,.08)';
+      for (const [dx, dy] of F.dots) { ctx.beginPath(); ctx.arc(dx * r, dy * r, r * .035, 0, 7); ctx.fill(); }
+      break;
+    case 'banana':
+      ctx.fillStyle = '#7A5A1E';
+      ctx.beginPath(); ctx.arc(-r * 1.15, 0, r * .2, 0, 7); ctx.arc(r * 1.15, 0, r * .2, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(194,154,0,.45)'; ctx.lineWidth = r * .06;
+      ctx.beginPath(); ctx.moveTo(-r * .9, r * .22); ctx.quadraticCurveTo(0, r * .34, r * .9, r * .22); ctx.stroke();
+      break;
+    case 'grid':
+      ctx.strokeStyle = 'rgba(150,90,0,.35)'; ctx.lineWidth = r * .05;
+      for (let i = -6; i <= 6; i++) {
+        ctx.beginPath(); ctx.moveTo(i * r * .3 - r * 1.5, -r * 1.5); ctx.lineTo(i * r * .3 + r * 1.5, r * 1.5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i * r * .3 + r * 1.5, -r * 1.5); ctx.lineTo(i * r * .3 - r * 1.5, r * 1.5); ctx.stroke();
+      }
+      break;
+    case 'net':
+      ctx.strokeStyle = 'rgba(255,255,240,.55)'; ctx.lineWidth = r * .035;
+      for (let i = -4; i <= 4; i++) {
+        ctx.beginPath(); ctx.moveTo(-r * 1.2, i * r * .26); ctx.bezierCurveTo(-r * .4, i * r * .26 - r * .12, r * .4, i * r * .26 + r * .12, r * 1.2, i * r * .26); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i * r * .26, -r * 1.2); ctx.bezierCurveTo(i * r * .26 + r * .1, -r * .4, i * r * .26 - r * .1, r * .4, i * r * .26, r * 1.2); ctx.stroke();
+      }
+      break;
+    case 'stripes':
+      ctx.strokeStyle = F.d; ctx.lineWidth = r * .11; ctx.lineJoin = 'round';
+      for (let i = -3; i <= 3; i++) {
+        const x0 = i * r * .32; ctx.beginPath(); ctx.moveTo(x0, -r * 1.1);
+        for (let k = 1; k <= 8; k++) ctx.lineTo(x0 + (k % 2 ? r * .07 : -r * .07), -r * 1.1 + k * r * .28);
+        ctx.stroke();
+      }
+      break;
+  }
+  ctx.restore();
+}
+
+function drawLeaf(ctx, F, r, top) {
+  const leaf = (x, y, s, a) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ctx.fillStyle = '#5CC24A'; ctx.strokeStyle = '#2F7D2A'; ctx.lineWidth = Math.max(1.5, s * .12);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(s * .55, -s * .55, s * 1.2, 0); ctx.quadraticCurveTo(s * .55, s * .45, 0, 0);
+    ctx.fill(); ctx.stroke(); ctx.restore();
+  };
+  const stem = (h) => {
+    ctx.fillStyle = '#7A4E22'; ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(-r * .05, top - h, r * .1, h + r * .08, r * .05) : ctx.rect(-r * .05, top - h, r * .1, h + r * .08);
+    ctx.fill();
+  };
+  switch (F.leaf) {
+    case 'leaf': stem(r * .12); leaf(r * .02, top - r * .06, r * .42, -.45); break;
+    case 'stem': stem(r * .22); leaf(r * .04, top - r * .14, r * .3, -.3); break;
+    case 'crown': {
+      const s = F.shape === 'tallOct' ? r * .42 : r * .5;
+      leaf(0, top + r * .04, s, -Math.PI / 2 - .9); leaf(0, top + r * .04, s, -Math.PI / 2); leaf(0, top + r * .04, s, -Math.PI / 2 + .9);
+      break;
+    }
+  }
+}
+
+function drawFace(ctx, F, r, b, now) {
+  const s = r * (F.fs || .6), ox = b.faceOff.x, oy = b.faceOff.y;
+  const happy = now - b.born < 650 || b.happy > now;
+  ctx.fillStyle = 'rgba(255,110,140,.42)';
+  ctx.beginPath(); ctx.ellipse(ox - s * .68, oy + s * .14, s * .18, s * .11, 0, 0, 7); ctx.ellipse(ox + s * .68, oy + s * .14, s * .18, s * .11, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = ctx.fillStyle = '#3A2A2E'; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.4, s * .08);
+  if (happy) {
+    for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(ox + sx * s * .42, oy - s * .02, s * .12, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+  } else {
+    for (const sx of [-1, 1]) {
+      ctx.fillStyle = '#3A2A2E'; ctx.beginPath(); ctx.arc(ox + sx * s * .42, oy - s * .06, s * .115, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox + sx * s * .42 - s * .04, oy - s * .1, s * .04, 0, 7); ctx.fill();
+    }
+  }
+  ctx.beginPath(); ctx.arc(ox, oy + s * .1, s * (happy ? .2 : .14), .15 * Math.PI, .85 * Math.PI); ctx.stroke();
+}
+
+function drawFruit(ctx, b, now, scale = 1) {
+  const F = FRUITS[b.level], r = F.r, x = b.position.x, y = b.position.y;
+  ctx.save();
+  if (scale !== 1) { ctx.translate(x, y); ctx.scale(scale, scale); ctx.translate(-x, -y); }
+  tracePath(ctx, b);
+  ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(4, r * .14); ctx.strokeStyle = F.d; ctx.stroke();
+  ctx.fillStyle = F.c; ctx.fill();
+  ctx.save(); ctx.clip();
+  ctx.save(); ctx.translate(x, y); ctx.rotate(b.angle); drawPattern(ctx, F, r); ctx.restore();
+  const g = ctx.createRadialGradient(x - r * .35, y - r * .45, 0, x - r * .35, y - r * .45, r * .75);
+  g.addColorStop(0, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(x - r * 1.6, y - r * 1.6, r * 3.2, r * 3.2);
+  ctx.restore();
+  ctx.translate(x, y); ctx.rotate(b.angle);
+  drawLeaf(ctx, F, r, b.localTop);
+  drawFace(ctx, F, r, b, now);
+  ctx.restore();
+}
+
+function drawTemplate(ctx, lv, x, y, scale, now) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale); drawFruit(ctx, TEMPL[lv], now); ctx.restore();
+}
+
+// ---------- 화면 ----------
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cv = $('game'), ctx = cv.getContext('2d');
+const nextCv = $('next'), nctx = nextCv.getContext('2d');
+let SC = 1, DPR = 1;
+function resize() {
+  const rw = stage.clientWidth, rh = stage.clientHeight;
+  SC = Math.min(rw / W, rh / H); DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  cv.style.width = W * SC + 'px'; cv.style.height = H * SC + 'px';
+  cv.width = Math.round(W * SC * DPR); cv.height = Math.round(H * SC * DPR);
+}
+window.addEventListener('resize', resize);
+
+// ---------- 상태 ----------
+let fruits = [], mergeQ = [], fx = [], texts = [];
+let state = 'play', score = 0, gameCoins = 0, cur = 0, next = 0, dropX = W / 2, holding = false, nextDropAt = 0, bombMode = false, danger = 0;
+
+function randLevel() {
+  const cap = Math.min(DROP_WEIGHTS.length, seen + 1);
+  let t = 0; for (let i = 0; i < cap; i++) t += DROP_WEIGHTS[i];
+  let v = Math.random() * t;
+  for (let i = 0; i < cap; i++) { v -= DROP_WEIGHTS[i]; if (v < 0) return i; }
+  return 0;
+}
+const clampX = (x, lv = cur) => { const hw = TEMPL[lv].halfW + 2; return Math.max(WALL + hw, Math.min(W - WALL - hw, x)); };
+
+function addFruit(b) { fruits.push(b); Composite.add(world, b); }
+function removeFruit(b) { const i = fruits.indexOf(b); if (i >= 0) fruits.splice(i, 1); Composite.remove(world, b); }
+
+function updateHud() {
+  $('score').textContent = score; $('best').textContent = best; $('coins').textContent = coins;
+  nctx.setTransform(1, 0, 0, 1, 0, 0); nctx.clearRect(0, 0, 96, 96);
+  const t = TEMPL[next], s = Math.min(1.3, 34 / Math.max(t.halfW, t.halfH + (FRUITS[next].leaf ? FRUITS[next].r * .3 : 0)));
+  drawTemplate(nctx, next, 48, 52, s, -1);
+}
+function addScore(n) { score += n; if (score > best) { best = score; store.set('best', best); } updateHud(); }
+function addCoins(n, x, y) {
+  coins += n; gameCoins += Math.max(0, n); store.set('coins', coins); updateHud();
+  const p = $('coinPill'); p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump');
+  if (x !== undefined) texts.push({ x, y, t: `+${n} 코인`, life: 1400, max: 1400, c: '#F5A700', size: 26 });
+}
+function discover(lv) { if (lv > seen) { seen = lv; store.set('seen', seen); toast(`새 과일 발견! ${FRUITS[lv].name}`); } }
+
+let toastTimer;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1600); }
+
+// ---------- 소리·진동 ----------
+let AC = null;
+function ensureAudio() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { } }
+  if (AC && AC.state === 'suspended') AC.resume();
+}
+function tone(f, d = .12, type = 'sine', v = .14, up = 1.5) {
+  if (!AC) return;
+  const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * up, t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .02);
+}
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch { } };
+
+// ---------- 효과 ----------
+function burst(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = 1.5 + Math.random() * 4;
+    fx.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.5, life: 600 + Math.random() * 300, max: 900, c: Math.random() < .3 ? '#fff' : color, sz: 2 + Math.random() * 4 });
+  }
+}
+
+// ---------- 합치기 ----------
+function onCollide(e) {
+  for (const p of e.pairs) {
+    const a = p.bodyA.parent, b = p.bodyB.parent;
+    if (!a.isFruit || !b.isFruit || a.merging || b.merging || a.level !== b.level) continue;
+    a.merging = b.merging = true; mergeQ.push([a, b]);
+  }
+}
+Events.on(engine, 'collisionStart', onCollide);
+Events.on(engine, 'collisionActive', onCollide);
+
+function processMerges() {
+  for (const [a, b] of mergeQ) {
+    if (!fruits.includes(a) || !fruits.includes(b)) continue;
+    removeFruit(a); removeFruit(b);
+    const lv = a.level, F = FRUITS[lv];
+    let mx = (a.position.x + b.position.x) / 2, my = (a.position.y + b.position.y) / 2;
+    burst(mx, my, F.c, 10 + lv * 2);
+    if (lv === MAX) {
+      addCoins(COIN_POP_MAX, mx, my); addScore(SCORE[MAX] * 3);
+      burst(mx, my, '#F5C400', 40); tone(523, .15, 'triangle', .2); setTimeout(() => tone(784, .3, 'triangle', .2), 120); buzz(60);
+      continue;
+    }
+    const n = makeBody(lv + 1, 0, 0);
+    mx = Math.max(WALL + n.halfW, Math.min(W - WALL - n.halfW, mx));
+    my = Math.min(FLOOR - n.halfH, my);
+    Body.setPosition(n, { x: mx, y: my }); Body.setAngle(n, a.angle);
+    Body.setVelocity(n, { x: (a.velocity.x + b.velocity.x) / 2, y: Math.min(0, (a.velocity.y + b.velocity.y) / 2) });
+    addFruit(n); addScore(SCORE[lv + 1]); discover(lv + 1);
+    texts.push({ x: mx, y: my - 10, t: '+' + SCORE[lv + 1], life: 800, max: 800, c: '#fff', size: 18 });
+    tone(260 + lv * 55, .14, 'sine', .16, 1.6); buzz(15);
+    if (lv + 1 === MAX) { addCoins(COIN_MAKE_MAX, mx, my - 30); burst(mx, my, '#F5C400', 30); }
+  }
+  mergeQ.length = 0;
+}
+
+// ---------- 입력 ----------
+const toWorld = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / SC, y: (e.clientY - r.top) / SC }; };
+cv.addEventListener('pointerdown', e => {
+  ensureAudio(); e.preventDefault();
+  const p = toWorld(e);
+  if (bombMode) { bombAt(p); return; }
+  if (state !== 'play') return;
+  holding = true; dropX = clampX(p.x);
+  try { cv.setPointerCapture(e.pointerId); } catch { }
+});
+cv.addEventListener('pointermove', e => {
+  if (holding || e.pointerType === 'mouse') dropX = clampX(toWorld(e).x);
+});
+const release = () => { if (holding) { holding = false; drop(); } };
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', () => { holding = false; });
+
+function drop() {
+  const now = performance.now();
+  if (state !== 'play' || now < nextDropAt) return;
+  const b = makeBody(cur, clampX(dropX), DROP_Y);
+  addFruit(b);
+  tone(420, .07, 'sine', .08, .7);
+  cur = next; next = randLevel(); nextDropAt = now + DROP_COOLDOWN;
+  dropX = clampX(dropX);
+  updateHud();
+}
+
+function bombAt(p) {
+  const hit = Query.point(fruits, p)[0];
+  if (!hit) { toast('터뜨릴 과일을 탭하세요'); return; }
+  removeFruit(hit); addCoins(-ITEM_COST);
+  burst(hit.position.x, hit.position.y, FRUITS[hit.level].c, 30); burst(hit.position.x, hit.position.y, '#555', 12);
+  tone(120, .25, 'sawtooth', .18, .5); buzz(40);
+  setBomb(false);
+}
+function setBomb(on) { bombMode = on; $('btnBomb').classList.toggle('active', on); if (on) toast('터뜨릴 과일을 탭하세요'); }
+
+$('btnBomb').onclick = () => {
+  ensureAudio();
+  if (state !== 'play') return;
+  if (bombMode) return setBomb(false);
+  if (coins < ITEM_COST) return toast('코인이 부족해요');
+  if (!fruits.length) return toast('터뜨릴 과일이 없어요');
+  setBomb(true);
+};
+$('btnShake').onclick = () => {
+  ensureAudio();
+  if (state !== 'play') return;
+  if (coins < ITEM_COST) return toast('코인이 부족해요');
+  if (!fruits.length) return toast('흔들 과일이 없어요');
+  addCoins(-ITEM_COST);
+  for (const b of fruits) {
+    Body.setVelocity(b, { x: (Math.random() - .5) * 7, y: -(3 + Math.random() * 6) });
+    Body.setAngularVelocity(b, (Math.random() - .5) * .25);
+  }
+  shakeT = 400; tone(90, .3, 'square', .1, 1.4); buzz(80);
+};
+let shakeT = 0;
+
+$('btnRestart').onclick = () => {
+  if (state === 'play' && fruits.length && !confirm('처음부터 다시 시작할까요?')) return;
+  restart();
+};
+$('btnAgain').onclick = restart;
+$('btnDex').onclick = openDex;
+$('btnTheme').onclick = () => {
+  ensureAudio();
+  const others = THEMES.filter(t => t !== theme);
+  const t = others[Math.floor(Math.random() * others.length)];
+  applyTheme(t, true); toast(`🎨 ${t.name}`);
+  const b = $('btnTheme'); b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin');
+  tone(660, .12, 'triangle', .1, 1.3);
+};
+const closeDex = () => $('dexModal').classList.remove('show');
+$('btnDexClose').onclick = closeDex;
+$('btnDexX').onclick = closeDex;
+$('dexModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDex(); });
+
+// iOS: 화면 전체가 끌려 다니거나 확대되지 않게 막되, 도감 목록 스크롤은 허용
+document.addEventListener('touchmove', e => { if (!e.target.closest('.scroll')) e.preventDefault(); }, { passive: false });
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+function openDex() {
+  const list = $('dexList'); list.innerHTML = '';
+  FRUITS.forEach((F, i) => {
+    const known = i <= seen, it = document.createElement('div'); it.className = 'it';
+    const c = document.createElement('canvas'); c.width = c.height = 108;
+    const g = c.getContext('2d'), t = TEMPL[i];
+    if (known) drawTemplate(g, i, 54, 58, Math.min(1.6, 40 / Math.max(t.halfW, t.halfH + F.r * .25)), -1);
+    else { g.fillStyle = '#dfe6ee'; g.beginPath(); g.arc(54, 54, 36, 0, 7); g.fill(); g.fillStyle = '#9aa9bd'; g.font = '900 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', 54, 56); }
+    it.appendChild(c);
+    const tx = document.createElement('div');
+    tx.innerHTML = `<span class="no">Lv.${i + 1}</span><b>${known ? F.name : '???'}</b><small>${known ? F.desc : '합쳐서 발견해 보세요'}</small>`;
+    it.appendChild(tx); list.appendChild(it);
+  });
+  $('dexModal').classList.add('show');
+}
+
+function restart() {
+  for (const b of [...fruits]) removeFruit(b);
+  mergeQ.length = 0; fx.length = 0; texts.length = 0;
+  score = 0; gameCoins = 0; state = 'play'; danger = 0; setBomb(false);
+  cur = randLevel(); next = randLevel(); nextDropAt = 0; dropX = W / 2;
+  $('overModal').classList.remove('show');
+  updateHud();
+}
+
+function gameOver() {
+  state = 'over'; holding = false; setBomb(false);
+  $('ovScore').textContent = score; $('ovBest').textContent = best; $('ovCoins').textContent = gameCoins;
+  tone(330, .3, 'triangle', .15, .5); buzz([60, 40, 60]);
+  setTimeout(() => $('overModal').classList.add('show'), 500);
+}
+
+// ---------- 루프 ----------
+function checkOver(dt, now) {
+  let warn = 0;
+  for (const b of fruits) {
+    if (b.position.y > H + 200) { removeFruit(b); continue; }
+    if (now - b.born < 1300) continue;
+    if (b.bounds.min.y < DANGER_Y) {
+      b.overT = (b.overT || 0) + dt; warn = Math.max(warn, b.overT / OVER_TIME);
+      if (b.overT > OVER_TIME) { gameOver(); return; }
+    } else b.overT = 0;
+  }
+  danger = warn;
+}
+
+const BOX_TOP = 92;
+// 통 안 물방울 장식: [x, 통 높이 대비 위치, 반지름]
+const BUBBLES = [[60, .35, 7], [330, .55, 10], [120, .8, 5], [290, .25, 5], [200, .92, 8], [350, .85, 4]];
+function rr(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+// 테마 색의 판자(나뭇결 또는 사탕 줄무늬)
+function plank(c, x, y, w, h, r, vertical) {
+  const B = theme.box;
+  const g = vertical ? c.createLinearGradient(x, 0, x + w, 0) : c.createLinearGradient(0, y, 0, y + h);
+  B.wood.forEach((col, i) => g.addColorStop(i / (B.wood.length - 1), col));
+  c.fillStyle = g; rr(c, x, y, w, h, r); c.fill();
+  c.save(); c.clip();
+  if (B.stripe) {
+    c.strokeStyle = B.stripe; c.lineWidth = 6;
+    for (let k = -h - w; k < w + h; k += 18) {
+      c.beginPath();
+      vertical ? (c.moveTo(x - 4, y + k), c.lineTo(x + w + 4, y + k + w + 8)) : (c.moveTo(x + k, y + h + 4), c.lineTo(x + k + h + 8, y - 4));
+      c.stroke();
+    }
+  }
+  if (B.grain) {
+    c.strokeStyle = B.grain; c.lineWidth = 1.2;
+    for (let i = 1; i < 3; i++) {
+      c.beginPath();
+      if (vertical) { const gx = x + w * i / 3; c.moveTo(gx, y); for (let k = y; k < y + h; k += 40) c.quadraticCurveTo(gx + (i % 2 ? 2 : -2), k + 20, gx, k + 40); }
+      else { const gy = y + h * i / 3; c.moveTo(x, gy); for (let k = x; k < x + w; k += 40) c.quadraticCurveTo(k + 20, gy + (i % 2 ? 2 : -2), k + 40, gy); }
+      c.stroke();
+    }
+  }
+  c.fillStyle = 'rgba(255,255,255,.35)';
+  vertical ? c.fillRect(x + 2, y, 2, h) : c.fillRect(x, y + 2, w, 2);
+  c.restore();
+  c.strokeStyle = B.line; c.lineWidth = 2; rr(c, x, y, w, h, r); c.stroke();
+}
+// 기둥 위 장식(테마별)
+function knob(c, x, y) {
+  const B = theme.box, left = x < W / 2;
+  c.save(); c.lineWidth = 2; c.fillStyle = B.knob[0]; c.strokeStyle = B.knob[1];
+  if (B.star) {
+    c.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? 4 : 8.5; c.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); }
+    c.closePath(); c.fill(); c.stroke();
+  } else if (B.flower) {
+    for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5 - Math.PI / 2; c.beginPath(); c.arc(x + Math.cos(a) * 4.5, y + Math.sin(a) * 4.5, 4, 0, 7); c.fill(); }
+    c.fillStyle = '#ffe27a'; c.beginPath(); c.arc(x, y, 2.6, 0, 7); c.fill();
+  } else if (B.shell) {
+    c.beginPath(); c.moveTo(x, y + 6); c.arc(x, y + 2, 8, Math.PI * 1.05, Math.PI * 1.95); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.2;
+    for (const dx of [-4, 0, 4]) { c.beginPath(); c.moveTo(x, y + 6); c.lineTo(x + dx, y - 4); c.stroke(); }
+  } else {
+    c.beginPath(); c.arc(x, y, 7.5, 0, 7); c.fill(); c.stroke();
+    if (B.candy) { c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 3.5, 0, Math.PI * 1.5); c.stroke(); }
+    else { c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.arc(x - 2.5, y - 3, 2.5, 0, 7); c.fill(); }
+    if (B.leaf) {
+      c.translate(x + (left ? 1 : -13), y - 7); c.rotate(left ? -.5 : .5);
+      c.fillStyle = B.leaf; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(6, -7, 14, 0); c.quadraticCurveTo(6, 5, 0, 0); c.fill(); c.stroke();
+    }
+  }
+  c.restore();
+}
+
+function render(now) {
+  ctx.setTransform(SC * DPR, 0, 0, SC * DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (shakeT > 0) ctx.translate((Math.random() - .5) * 6, (Math.random() - .5) * 6);
+  const B = theme.box;
+
+  // 유리 통
+  ctx.save();
+  rr(ctx, WALL, BOX_TOP, W - WALL * 2, FLOOR - BOX_TOP + 4, 16);
+  const bg = ctx.createLinearGradient(0, BOX_TOP, 0, FLOOR);
+  bg.addColorStop(0, B.glass[0]); bg.addColorStop(.6, B.glass[1]); bg.addColorStop(1, B.glass[2]);
+  ctx.fillStyle = bg; ctx.fill(); ctx.clip();
+  ctx.fillStyle = `rgba(255,255,255,${B.shine})`;
+  for (const [bx, f, br] of BUBBLES) { ctx.beginPath(); ctx.arc(bx, BOX_TOP + f * (FLOOR - BOX_TOP), br, 0, 7); ctx.fill(); }
+  ctx.fillStyle = `rgba(255,255,255,${B.shine + .05})`; rr(ctx, WALL + 8, BOX_TOP + 14, 9, FLOOR - BOX_TOP - 40, 5); ctx.fill();
+  rr(ctx, WALL + 22, BOX_TOP + 14, 4, (FLOOR - BOX_TOP) * .7, 2); ctx.fill();
+  ctx.restore();
+
+  // 기둥과 바닥
+  plank(ctx, 0, BOX_TOP - 4, WALL, H - BOX_TOP + 4, 7, true);
+  plank(ctx, W - WALL, BOX_TOP - 4, WALL, H - BOX_TOP + 4, 7, true);
+  plank(ctx, 0, FLOOR, W, H - FLOOR, 8, false);
+  ctx.fillStyle = B.line;
+  for (const x of [WALL + 10, W / 2, W - WALL - 10]) { ctx.beginPath(); ctx.arc(x, FLOOR + (H - FLOOR) / 2, 2, 0, 7); ctx.fill(); }
+  knob(ctx, WALL / 2, BOX_TOP - 8); knob(ctx, W - WALL / 2, BOX_TOP - 8);
+
+  // 경고선
+  const pulse = danger > 0 ? .5 + .5 * Math.sin(now / 90) : 0;
+  ctx.save(); ctx.setLineDash([10, 8]); ctx.lineWidth = 3;
+  ctx.strokeStyle = danger > 0 ? `rgba(255,60,80,${.5 + pulse * .5})` : 'rgba(255,120,140,.45)';
+  ctx.beginPath(); ctx.moveTo(WALL, DANGER_Y); ctx.lineTo(W - WALL, DANGER_Y); ctx.stroke(); ctx.restore();
+
+  // 떨어뜨릴 과일 + 가이드
+  if (state === 'play' && !bombMode) {
+    const ready = now >= nextDropAt, x = clampX(dropX);
+    ctx.save(); ctx.setLineDash([6, 7]); ctx.strokeStyle = 'rgba(230,120,200,.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, DROP_Y + TEMPL[cur].halfH); ctx.lineTo(x, FLOOR); ctx.stroke(); ctx.restore();
+    ctx.globalAlpha = ready ? 1 : .35;
+    drawTemplate(ctx, cur, x, DROP_Y, 1, -1);
+    ctx.globalAlpha = 1;
+  }
+
+  // 과일
+  for (const b of fruits) {
+    const age = now - b.born, s = age < 200 ? .75 + .25 * (1 - Math.pow(1 - age / 200, 3)) : 1;
+    drawFruit(ctx, b, now, s);
+  }
+
+  // 효과
+  for (const p of fx) { ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const t of texts) {
+    const k = t.life / t.max; ctx.globalAlpha = Math.min(1, k * 2);
+    ctx.font = `${t.size}px Jua,"Malgun Gothic",sans-serif`; ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(43,58,85,.8)';
+    ctx.strokeText(t.t, t.x, t.y); ctx.fillStyle = t.c; ctx.fillText(t.t, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+
+  if (bombMode) {
+    ctx.fillStyle = 'rgba(40,20,20,.18)'; rr(ctx, WALL, BOX_TOP, W - WALL * 2, FLOOR - BOX_TOP, 16); ctx.fill();
+    ctx.font = '20px Jua,"Malgun Gothic",sans-serif'; ctx.lineWidth = 5; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#C0392B';
+    ctx.strokeText('💣 터뜨릴 과일을 탭하세요', W / 2, 70); ctx.fillText('💣 터뜨릴 과일을 탭하세요', W / 2, 70);
+  }
+}
+
+function updateFx(dt) {
+  const k = dt / 16.67;
+  for (const p of fx) { p.x += p.vx * k; p.y += p.vy * k; p.vy += .18 * k; p.life -= dt; }
+  fx = fx.filter(p => p.life > 0);
+  for (const t of texts) { t.y -= .6 * k; t.life -= dt; }
+  texts = texts.filter(t => t.life > 0);
+  if (shakeT > 0) shakeT -= dt;
+}
+
+let last = performance.now(), acc = 0;
+function frame(now) {
+  const dt = Math.min(100, now - last); last = now;
+  if (state === 'play') {
+    acc += dt; let n = 0;
+    while (acc >= STEP && n < 4) { Engine.update(engine, STEP); processMerges(); acc -= STEP; n++; }
+    if (n === 4) acc = 0;
+    if (state === 'play') checkOver(dt, now);
+  }
+  updateFx(dt); render(now);
+  requestAnimationFrame(frame);
+}
+
+// 개발용 접근(검증 시 사용)
+window.__game = { get fruits() { return fruits; }, makeBody, addFruit, FRUITS, get state() { return state; } };
+
+resize(); restart(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
