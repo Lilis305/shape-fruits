@@ -65,10 +65,10 @@ button{font-family:inherit;color:var(--ink);cursor:pointer;touch-action:manipula
 @keyframes bump{40%{transform:scale(1.2)}}
 #stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
 #game{touch-action:none;display:block;filter:drop-shadow(0 12px 16px rgba(0,0,0,.2))}
-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;
+footer{display:flex;justify-content:space-between;align-items:center;gap:8px;
   padding:8px 14px calc(env(safe-area-inset-bottom) + var(--gap))}
-.grp{display:flex;gap:10px}
-.tool{width:72px;height:64px;border-radius:22px;border:3px solid #fff;background:linear-gradient(var(--c1),var(--c2));
+.grp{display:flex;gap:8px}
+.tool{width:62px;height:64px;border-radius:22px;border:3px solid #fff;background:linear-gradient(var(--c1),var(--c2));
   box-shadow:0 5px 0 var(--csh),0 10px 16px rgba(0,0,0,.18);display:flex;flex-direction:column;padding:0;
   align-items:center;justify-content:center;font-size:12px;gap:2px;white-space:nowrap}
 .tool .ic{font-size:25px;line-height:1}
@@ -129,8 +129,9 @@ footer{display:flex;justify-content:space-between;align-items:center;gap:10px;
   .coin{min-width:0;font-size:15px;padding:3px 9px 3px 3px;gap:4px}
   .coin i{width:22px;height:22px}
   footer{padding-left:10px;padding-right:10px}
-  .grp{gap:8px}
-  .tool{width:64px}
+  .grp{gap:6px}
+  .tool{width:56px}
+  .tool .ic{font-size:22px}
   .dex{grid-template-columns:1fr}
 }
 @media (max-height:740px){
@@ -156,7 +157,8 @@ footer{display:flex;justify-content:space-between;align-items:center;gap:10px;
   <div id="stage"><canvas id="game"></canvas></div>
   <footer>
     <div class="grp">
-      <button class="tool pink" id="btnDex"><span class="ic">📖</span>과일도감</button>
+      <button class="tool pink" id="btnDex"><span class="ic">📖</span>도감</button>
+      <button class="tool" id="btnSet"><span class="ic" id="setIc">🍎</span><span id="setName">과일</span></button>
       <button class="tool" id="btnTheme"><span class="ic">🎨</span>테마</button>
     </div>
     <div class="grp">
@@ -176,9 +178,9 @@ footer{display:flex;justify-content:space-between;align-items:center;gap:10px;
 </div></div>
 
 <div class="modal" id="dexModal"><div class="card">
-  <div class="card-head"><h2>📖 과일도감</h2><button class="close" id="btnDexX" aria-label="닫기">✕</button></div>
+  <div class="card-head"><h2 id="dexTitle">📖 과일도감</h2><button class="close" id="btnDexX" aria-label="닫기">✕</button></div>
   <div class="card-body scroll">
-    <p class="sub">같은 과일 두 개가 닿으면 다음 과일로!<br>모양마다 구르는 방식이 달라요.</p>
+    <p class="sub" id="dexSub"></p>
     <div class="dex" id="dexList"></div>
     <button class="btn gray" id="btnDexClose">닫기</button>
   </div>
@@ -235,6 +237,55 @@ const store = {
   set(k, v) { try { localStorage.setItem('sf_' + k, JSON.stringify(v)); } catch {} },
 };
 let coins = store.get('coins', 100), best = store.get('best', 0), seen = store.get('seen', 4);
+// ---------- 아이템 세트 ----------
+// 모양·크기(=물리)는 FRUITS 의 것을 그대로 쓰고, 이름·색·무늬·장식만 세트별로 바꾼다.
+// 0~9단계 설명은 모양 설명이라 과일 세트 것을 함께 쓴다.
+const FINAL_DESC = `만들면 코인 +${COIN_MAKE_MAX}, 두 개를 합치면 +${COIN_POP_MAX}!`;
+const SETS = {
+  fruit: { name: '과일', icon: '🍎', items: FRUITS.map(({ name, c, d, desc, pat, leaf, fs }) => ({ name, c, d, desc, pat, leaf, fs })) },
+  gem: { name: '보석', icon: '💎', items: [
+    { name: '진주',       c: '#F6EFF4', d: '#B9A3B8', pat: 'pearl' },
+    { name: '토파즈',     c: '#FFC24D', d: '#C28400', pat: 'facet', leaf: 'sparkle' },
+    { name: '자수정',     c: '#B88CF2', d: '#7448C0', pat: 'facet', leaf: 'sparkle' },
+    { name: '오팔',       c: '#CBEFF5', d: '#6FB0C4', pat: 'opal' },
+    { name: '사파이어',   c: '#5A86F2', d: '#2842A6', pat: 'facet', leaf: 'sparkle' },
+    { name: '페리도트',   c: '#A6E25E', d: '#5A9A22', pat: 'facet', leaf: 'sparkle' },
+    { name: '아쿠아마린', c: '#86E6E2', d: '#2F9E9B', pat: 'facet', leaf: 'sparkle' },
+    { name: '로즈쿼츠',   c: '#FFB6C9', d: '#D2698A', pat: 'facet', leaf: 'sparkle' },
+    { name: '에메랄드',   c: '#33CC8C', d: '#11835A', pat: 'facet', leaf: 'sparkle' },
+    { name: '루비',       c: '#F2456A', d: '#A3163A', pat: 'facet', leaf: 'sparkle' },
+    { name: '다이아몬드', c: '#E9F8FF', d: '#86AFCF', pat: 'diamond', leaf: 'sparkle' },
+  ] },
+  dessert: { name: '디저트', icon: '🍰', items: [
+    { name: '마카롱',     c: '#FFB8D2', d: '#D2709A', pat: 'macaron' },
+    { name: '조각 케이크', c: '#FFF0D2', d: '#D2A266', pat: 'slice', leaf: 'berry' },
+    { name: '벌집 쿠키',  c: '#F6C46C', d: '#B07A26', pat: 'honey' },
+    { name: '도넛',       c: '#FF8FC0', d: '#C25686', pat: 'donut' },
+    { name: '젤리빈',     c: '#FF7C7C', d: '#C24646', pat: 'jelly' },
+    { name: '각설탕',     c: '#FFFFFF', d: '#BFC6D2', pat: 'sugar' },
+    { name: '롤케이크',   c: '#F2C38B', d: '#AE773C', pat: 'roll' },
+    { name: '푸딩',       c: '#FFE08A', d: '#C4952A', pat: 'caramel', leaf: 'cherry' },
+    { name: '웨딩 케이크', c: '#FFF8F2', d: '#CFAF98', pat: 'tiers', leaf: 'topper' },
+    { name: '홀케이크',   c: '#FFD3E0', d: '#D2849E', pat: 'whole', leaf: 'berries' },
+    { name: '생일 케이크', c: '#FFE6A3', d: '#CF9F32', pat: 'birthday', leaf: 'candle' },
+  ] },
+};
+SETS.gem.items.concat(SETS.dessert.items).forEach((it, i) => {
+  const k = i % FRUITS.length;
+  it.desc = k === MAX ? `최종 ${i < FRUITS.length ? '보석' : '디저트'} · ${FINAL_DESC}` : SETS.fruit.items[k].desc;
+  it.fs = SETS.fruit.items[k].fs;
+});
+let setId = SETS[store.get('set', 'fruit')] ? store.get('set', 'fruit') : 'fruit';
+const SET = () => SETS[setId];
+// 받침에 맞춘 조사: 과일을 / 보석을 / 디저트를
+const eul = w => ((w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? '을' : '를');
+function loadSet(id) {
+  setId = id; store.set('set', id);
+  SETS[id].items.forEach((it, i) => Object.assign(FRUITS[i], { pat: undefined, leaf: undefined }, it));
+  seen = store.get(id === 'fruit' ? 'seen' : 'seen_' + id, 4);
+}
+loadSet(setId);
+
 
 // ---------- 테마 ----------
 // css: 화면 색(CSS 변수), box: 캔버스 통 모양, bg: 배경 그림(SVG)
@@ -509,6 +560,125 @@ function drawPattern(ctx, F, r) {
         ctx.stroke();
       }
       break;
+
+    // --- 보석 ---
+    case 'pearl': {
+      const g = ctx.createRadialGradient(-r * .35, -r * .35, 0, -r * .35, -r * .35, r * 1.1);
+      g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(.5, 'rgba(255,230,245,.25)'); g.addColorStop(1, 'rgba(200,180,230,.35)');
+      ctx.fillStyle = g; ctx.fillRect(-r * 1.3, -r * 1.3, r * 2.6, r * 2.6);
+      break;
+    }
+    case 'opal':
+      ['#ff9ec7', '#8ff0c4', '#ffe082', '#a7b5ff', '#ffc09a'].forEach((col, k) => {
+        ctx.fillStyle = col; ctx.globalAlpha = .55;
+        for (let i = k; i < F.dots.length; i += 5) { const [dx, dy] = F.dots[i]; ctx.beginPath(); ctx.ellipse(dx * r * .8, dy * r * .8, r * .2, r * .11, dx * 3, 0, 7); ctx.fill(); }
+      });
+      ctx.globalAlpha = 1;
+      break;
+    case 'facet':
+    case 'diamond': {
+      // 가운데 테이블 면 + 바깥으로 갈라지는 면
+      const n = 8, inR = r * .42, outR = r * 1.6;
+      for (let i = 0; i < n; i++) {
+        const a0 = i / n * Math.PI * 2 - Math.PI / 8, a1 = (i + 1) / n * Math.PI * 2 - Math.PI / 8;
+        ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.1)';
+        ctx.beginPath(); ctx.moveTo(Math.cos(a0) * inR, Math.sin(a0) * inR); ctx.lineTo(Math.cos(a0) * outR, Math.sin(a0) * outR);
+        ctx.lineTo(Math.cos(a1) * outR, Math.sin(a1) * outR); ctx.lineTo(Math.cos(a1) * inR, Math.sin(a1) * inR); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = Math.max(1, r * .035);
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2 - Math.PI / 8; ctx.lineTo(Math.cos(a) * inR, Math.sin(a) * inR); }
+      ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fill(); ctx.stroke();
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 - Math.PI / 8; ctx.beginPath(); ctx.moveTo(Math.cos(a) * inR, Math.sin(a) * inR); ctx.lineTo(Math.cos(a) * outR, Math.sin(a) * outR); ctx.stroke(); }
+      if (F.pat === 'diamond') {
+        ['#ff9ec7', '#ffe082', '#8ff0c4', '#a7b5ff'].forEach((col, k) => {
+          const a = k * 1.6 + .4; ctx.fillStyle = col; ctx.globalAlpha = .45;
+          ctx.beginPath(); ctx.arc(Math.cos(a) * r * .7, Math.sin(a) * r * .7, r * .12, 0, 7); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+      break;
+    }
+
+    // --- 디저트 ---
+    case 'macaron':
+      ctx.fillStyle = '#FFF4E4'; ctx.fillRect(-r * 1.2, r * .3, r * 2.4, r * .26);
+      ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = Math.max(1, r * .05);
+      ctx.beginPath(); ctx.moveTo(-r * 1.2, r * .3); ctx.lineTo(r * 1.2, r * .3); ctx.moveTo(-r * 1.2, r * .56); ctx.lineTo(r * 1.2, r * .56); ctx.stroke();
+      break;
+    case 'slice':
+      ctx.fillStyle = '#FFB3C7'; ctx.fillRect(-r * 1.3, -r * 1.2, r * 2.6, r * .62);
+      ctx.fillStyle = '#FF6B8A'; ctx.fillRect(-r * 1.3, r * .02, r * 2.6, r * .12);
+      ctx.fillStyle = '#FFFDF6'; ctx.fillRect(-r * 1.3, r * .42, r * 2.6, r * .1);
+      break;
+    case 'honey':
+      ctx.strokeStyle = 'rgba(140,80,10,.3)'; ctx.lineWidth = Math.max(1, r * .045);
+      for (let gy = -3; gy <= 3; gy++) for (let gx = -3; gx <= 3; gx++) {
+        const cx = (gx + (gy % 2 ? .5 : 0)) * r * .42, cy = gy * r * .36;
+        ctx.beginPath();
+        for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 + Math.PI / 6; ctx.lineTo(cx + Math.cos(a) * r * .22, cy + Math.sin(a) * r * .22); }
+        ctx.stroke();
+      }
+      break;
+    case 'donut': {
+      ctx.strokeStyle = '#EDB46C'; ctx.lineWidth = r * .3; ctx.beginPath(); ctx.arc(0, 0, r * .98, 0, 7); ctx.stroke();
+      const cols = ['#fff', '#7fe0cb', '#ffe082', '#a7b5ff', '#ff6b8a'];
+      F.dots.forEach(([dx, dy], i) => {
+        ctx.save(); ctx.translate(dx * r * .6, dy * r * .6); ctx.rotate(i * 1.3);
+        ctx.fillStyle = cols[i % 5]; ctx.fillRect(-r * .08, -r * .025, r * .16, r * .05); ctx.restore();
+      });
+      break;
+    }
+    case 'jelly':
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.beginPath(); ctx.ellipse(-r * .5, -r * .38, r * .22, r * .1, -.3, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(-r * .2, -r * .5, r * .05, 0, 7); ctx.fill();
+      break;
+    case 'sugar':
+      ctx.fillStyle = 'rgba(170,180,200,.45)';
+      for (const [dx, dy] of F.dots) ctx.fillRect(dx * r * .9, dy * r * .9, r * .06, r * .06);
+      ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = r * .06;
+      ctx.beginPath(); ctx.moveTo(-r * .7, -r * .62); ctx.lineTo(r * .5, -r * .62); ctx.stroke();
+      break;
+    case 'roll':
+      ctx.strokeStyle = '#FFF4E0'; ctx.lineWidth = r * .07;
+      for (const sx of [-1, 1]) {
+        ctx.beginPath();
+        for (let t = 0; t < 14; t += .3) ctx.lineTo(sx * r * .98 + Math.cos(t) * t * r * .028, Math.sin(t) * t * r * .028);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,.6)';
+      for (const [dx] of F.dots) { ctx.beginPath(); ctx.arc(dx * r * .6, -r * .35, r * .03, 0, 7); ctx.fill(); }
+      break;
+    case 'caramel':
+      ctx.fillStyle = '#A85A18'; ctx.beginPath(); ctx.moveTo(-r * 1.2, -r * 1.3); ctx.lineTo(r * 1.2, -r * 1.3); ctx.lineTo(r * 1.2, -r * .42);
+      for (let i = 6; i >= 0; i--) ctx.quadraticCurveTo(-r * 1.2 + (i + .5) * r * .4, -r * (i % 2 ? .22 : .5), -r * 1.2 + i * r * .4, -r * .42);
+      ctx.fill();
+      break;
+    case 'tiers':
+      for (const y of [-r * .5, r * .12, r * .7]) {
+        ctx.fillStyle = '#F4DCCB'; ctx.fillRect(-r * 1.2, y - r * .05, r * 2.4, r * .1);
+        ctx.fillStyle = '#fff';
+        for (let x = -r; x <= r; x += r * .2) { ctx.beginPath(); ctx.arc(x, y, r * .045, 0, 7); ctx.fill(); }
+      }
+      break;
+    case 'whole':
+      ctx.fillStyle = '#FFF6F9'; ctx.fillRect(-r * 1.2, -r * 1.2, r * 2.4, r * .62);
+      for (let x = -r; x <= r; x += r * .28) { ctx.beginPath(); ctx.arc(x, -r * .56, r * .14, 0, 7); ctx.fill(); }
+      ctx.fillStyle = '#FFF6F9'; ctx.fillRect(-r * 1.2, r * .55, r * 2.4, r * .1);
+      break;
+    case 'birthday': {
+      ctx.fillStyle = '#FFFDF5'; ctx.beginPath(); ctx.moveTo(-r * 1.2, -r * 1.2); ctx.lineTo(r * 1.2, -r * 1.2); ctx.lineTo(r * 1.2, -r * .5);
+      for (let i = 7; i >= 0; i--) ctx.quadraticCurveTo(-r * 1.2 + (i + .5) * r * .3, -r * (i % 2 ? .2 : .42), -r * 1.2 + i * r * .3, -r * .5);
+      ctx.fill();
+      const cols = ['#ff6b8a', '#7fe0cb', '#a7b5ff', '#ffb03b'];
+      F.dots.forEach(([dx, dy], i) => {
+        if (dy < -.2) return;
+        ctx.save(); ctx.translate(dx * r * .75, dy * r * .7 + r * .1); ctx.rotate(i);
+        ctx.fillStyle = cols[i % 4]; ctx.fillRect(-r * .06, -r * .02, r * .12, r * .04); ctx.restore();
+      });
+      break;
+    }
   }
   ctx.restore();
 }
@@ -531,6 +701,51 @@ function drawLeaf(ctx, F, r, top) {
     case 'crown': {
       const s = F.shape === 'tallOct' ? r * .42 : r * .5;
       leaf(0, top + r * .04, s, -Math.PI / 2 - .9); leaf(0, top + r * .04, s, -Math.PI / 2); leaf(0, top + r * .04, s, -Math.PI / 2 + .9);
+      break;
+    }
+    case 'sparkle': {
+      // 보석 반짝임(살짝 깜빡이도록 시간에 따라 크기 변화)
+      const k = .75 + .25 * Math.sin(performance.now() / 260 + r), s = r * .26 * k, x = r * .48, y = top + r * .3;
+      ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = r * .2;
+      ctx.beginPath(); ctx.moveTo(x, y - s); ctx.quadraticCurveTo(x, y, x + s, y); ctx.quadraticCurveTo(x, y, x, y + s);
+      ctx.quadraticCurveTo(x, y, x - s, y); ctx.quadraticCurveTo(x, y, x, y - s); ctx.fill();
+      ctx.shadowBlur = 0;
+      break;
+    }
+    case 'berry':
+    case 'berries': {
+      const xs = F.leaf === 'berry' ? [0] : [-r * .45, 0, r * .45], br = F.leaf === 'berry' ? r * .26 : r * .14;
+      for (const x of xs) {
+        const y = top + (F.leaf === 'berry' ? r * .05 : r * .12);
+        ctx.fillStyle = '#FF4D6D'; ctx.strokeStyle = '#B8203F'; ctx.lineWidth = Math.max(1, br * .15);
+        ctx.beginPath(); ctx.moveTo(x - br, y - br * .3); ctx.quadraticCurveTo(x, y - br * 1.1, x + br, y - br * .3); ctx.quadraticCurveTo(x + br * .6, y + br, x, y + br * 1.1);
+        ctx.quadraticCurveTo(x - br * .6, y + br, x - br, y - br * .3); ctx.fill(); ctx.stroke();
+        leaf(x - br * .1, y - br * .7, br * .7, -Math.PI / 2 - .8); leaf(x + br * .1, y - br * .7, br * .7, -Math.PI / 2 + .8);
+      }
+      break;
+    }
+    case 'cherry': {
+      const y = top - r * .1;
+      ctx.strokeStyle = '#4E7A2A'; ctx.lineWidth = Math.max(1.5, r * .05);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.quadraticCurveTo(r * .05, y - r * .3, r * .22, y - r * .38); ctx.stroke();
+      ctx.fillStyle = '#E8173C'; ctx.beginPath(); ctx.arc(0, y + r * .02, r * .16, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.arc(-r * .05, y - r * .04, r * .05, 0, 7); ctx.fill();
+      break;
+    }
+    case 'topper': {
+      const y = top - r * .02;
+      ctx.fillStyle = '#FF8FB1'; ctx.strokeStyle = '#D9608A'; ctx.lineWidth = Math.max(1.5, r * .04);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.bezierCurveTo(-r * .3, y - r * .2, -r * .15, y - r * .42, 0, y - r * .26);
+      ctx.bezierCurveTo(r * .15, y - r * .42, r * .3, y - r * .2, 0, y); ctx.fill(); ctx.stroke();
+      break;
+    }
+    case 'candle': {
+      const y = top + r * .04, h = r * .4, w = r * .1;
+      ctx.fillStyle = '#7FB8FF'; ctx.fillRect(-w / 2, y - h, w, h);
+      ctx.fillStyle = '#fff'; for (let k = 0; k < 3; k++) ctx.fillRect(-w / 2, y - h + k * h / 3 + h / 8, w, h / 10);
+      const fl = 1 + .12 * Math.sin(performance.now() / 90);
+      ctx.fillStyle = '#FFB020'; ctx.beginPath(); ctx.ellipse(0, y - h - r * .1, r * .07 * fl, r * .13 * fl, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#FFF2A0'; ctx.beginPath(); ctx.ellipse(0, y - h - r * .08, r * .035, r * .07, 0, 0, 7); ctx.fill();
       break;
     }
   }
@@ -617,7 +832,11 @@ function addCoins(n, x, y) {
   const p = $('coinPill'); p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump');
   if (x !== undefined) texts.push({ x, y, t: `+${n} 코인`, life: 1400, max: 1400, c: '#F5A700', size: 26 });
 }
-function discover(lv) { if (lv > seen) { seen = lv; store.set('seen', seen); toast(`새 과일 발견! ${FRUITS[lv].name}`); } }
+function discover(lv) {
+  if (lv <= seen) return;
+  seen = lv; store.set(setId === 'fruit' ? 'seen' : 'seen_' + setId, seen);
+  toast(`새 ${SET().name} 발견! ${FRUITS[lv].name}`);
+}
 
 let toastTimer;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1600); }
@@ -711,27 +930,27 @@ function drop() {
 
 function bombAt(p) {
   const hit = Query.point(fruits, p)[0];
-  if (!hit) { toast('터뜨릴 과일을 탭하세요'); return; }
+  if (!hit) { toast(`터뜨릴 ${SET().name}${eul(SET().name)} 탭하세요`); return; }
   removeFruit(hit); addCoins(-ITEM_COST);
   burst(hit.position.x, hit.position.y, FRUITS[hit.level].c, 30); burst(hit.position.x, hit.position.y, '#555', 12);
   tone(120, .25, 'sawtooth', .18, .5); buzz(40);
   setBomb(false);
 }
-function setBomb(on) { bombMode = on; $('btnBomb').classList.toggle('active', on); if (on) toast('터뜨릴 과일을 탭하세요'); }
+function setBomb(on) { bombMode = on; $('btnBomb').classList.toggle('active', on); if (on) toast(`터뜨릴 ${SET().name}${eul(SET().name)} 탭하세요`); }
 
 $('btnBomb').onclick = () => {
   ensureAudio();
   if (state !== 'play') return;
   if (bombMode) return setBomb(false);
   if (coins < ITEM_COST) return toast('코인이 부족해요');
-  if (!fruits.length) return toast('터뜨릴 과일이 없어요');
+  if (!fruits.length) return toast(`터뜨릴 ${SET().name}${eul(SET().name) === '을' ? '이' : '가'} 없어요`);
   setBomb(true);
 };
 $('btnShake').onclick = () => {
   ensureAudio();
   if (state !== 'play') return;
   if (coins < ITEM_COST) return toast('코인이 부족해요');
-  if (!fruits.length) return toast('흔들 과일이 없어요');
+  if (!fruits.length) return toast(`흔들 ${SET().name}${eul(SET().name) === '을' ? '이' : '가'} 없어요`);
   addCoins(-ITEM_COST);
   for (const b of fruits) {
     Body.setVelocity(b, { x: (Math.random() - .5) * 7, y: -(3 + Math.random() * 6) });
@@ -747,6 +966,15 @@ $('btnRestart').onclick = () => {
 };
 $('btnAgain').onclick = restart;
 $('btnDex').onclick = openDex;
+const SET_ORDER = Object.keys(SETS);
+function showSetButton() { $('setIc').textContent = SET().icon; $('setName').textContent = SET().name; }
+$('btnSet').onclick = () => {
+  ensureAudio();
+  loadSet(SET_ORDER[(SET_ORDER.indexOf(setId) + 1) % SET_ORDER.length]);
+  showSetButton(); updateHud(); toast(`${SET().icon} ${SET().name} 세트로 바꿨어요`);
+  const b = $('btnSet'); b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin');
+  tone(520, .1, 'triangle', .1, 1.5);
+};
 $('btnTheme').onclick = () => {
   ensureAudio();
   const others = THEMES.filter(t => t !== theme);
@@ -766,6 +994,8 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 
 function openDex() {
   const list = $('dexList'); list.innerHTML = '';
+  $('dexTitle').textContent = `${SET().icon} ${SET().name}도감`;
+  $('dexSub').innerHTML = `같은 ${SET().name} 두 개가 닿으면 다음 단계로!<br>모양마다 구르는 방식이 달라요.`;
   FRUITS.forEach((F, i) => {
     const known = i <= seen, it = document.createElement('div'); it.className = 'it';
     const c = document.createElement('canvas'); c.width = c.height = 108;
@@ -935,7 +1165,8 @@ function render(now) {
   if (bombMode) {
     ctx.fillStyle = 'rgba(40,20,20,.18)'; rr(ctx, WALL, BOX_TOP, W - WALL * 2, FLOOR - BOX_TOP, 16); ctx.fill();
     ctx.font = '20px Jua,"Malgun Gothic",sans-serif'; ctx.lineWidth = 5; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#C0392B';
-    ctx.strokeText('💣 터뜨릴 과일을 탭하세요', W / 2, 70); ctx.fillText('💣 터뜨릴 과일을 탭하세요', W / 2, 70);
+    const msg = `💣 터뜨릴 ${SET().name}${eul(SET().name)} 탭하세요`;
+    ctx.strokeText(msg, W / 2, 70); ctx.fillText(msg, W / 2, 70);
   }
 }
 
@@ -964,7 +1195,7 @@ function frame(now) {
 // 개발용 접근(검증 시 사용)
 window.__game = { get fruits() { return fruits; }, makeBody, addFruit, FRUITS, get state() { return state; } };
 
-resize(); restart(); requestAnimationFrame(frame);
+resize(); showSetButton(); restart(); requestAnimationFrame(frame);
 })();
 </script>
 </body>

@@ -1,6 +1,6 @@
 // 오프라인 실행용 서비스 워커: 캐시를 먼저 보여 주고 뒤에서 새 버전을 받아 둔다.
 // 파일 구성을 바꾸면 VERSION 을 올린다.
-const VERSION = 'sf-v4';
+const VERSION = 'sf-v5';
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 const FILES = [
   './',
